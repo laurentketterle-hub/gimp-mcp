@@ -409,3 +409,80 @@ class MockBackend:
         except KeyError as e:
             return {"ok": False, "error": str(e)}
 
+    # ── Filters pack (#4) ──
+
+    def sharpen(self, image_id: str, radius: float = 2.0, percent: float = 150) -> dict[str, Any]:
+        try:
+            im = self._load(image_id)
+            from PIL import ImageFilter
+            out = im.filter(ImageFilter.UnsharpMask(radius=radius, percent=int(percent)))
+            self._store(image_id, out)
+            return {"ok": True, "image_id": image_id, "filter": "sharpen"}
+        except KeyError as e:
+            return {"ok": False, "error": str(e)}
+
+    def emboss(self, image_id: str) -> dict[str, Any]:
+        try:
+            im = self._load(image_id)
+            from PIL import ImageFilter
+            out = im.filter(ImageFilter.EMBOSS)
+            self._store(image_id, out)
+            return {"ok": True, "image_id": image_id, "filter": "emboss"}
+        except KeyError as e:
+            return {"ok": False, "error": str(e)}
+
+    def brightness_contrast(self, image_id: str, brightness: float = 1.0, contrast: float = 1.0) -> dict[str, Any]:
+        try:
+            im = self._load(image_id)
+            from PIL import ImageEnhance
+            im = ImageEnhance.Brightness(im).enhance(brightness)
+            im = ImageEnhance.Contrast(im).enhance(contrast)
+            self._store(image_id, im)
+            return {"ok": True, "image_id": image_id, "brightness": brightness, "contrast": contrast}
+        except KeyError as e:
+            return {"ok": False, "error": str(e)}
+
+    # ── Selection + fill/stroke (#7) ──
+
+    def select_rect(self, image_id: str, x: int = 0, y: int = 0, width: int = 100, height: int = 100) -> dict[str, Any]:
+        try:
+            self._load(image_id)
+            if not hasattr(self, "_selections"):
+                self._selections = {}
+            self._selections[image_id] = {"type": "rect", "x": x, "y": y, "width": width, "height": height}
+            return {"ok": True, "image_id": image_id, "selection": {"x": x, "y": y, "width": width, "height": height}}
+        except KeyError as e:
+            return {"ok": False, "error": str(e)}
+
+    def fill_selection(self, image_id: str, color: str = "#ff0000") -> dict[str, Any]:
+        try:
+            im = self._load(image_id)
+            sel = getattr(self, "_selections", {}).get(image_id)
+            if sel is None:
+                return {"ok": False, "error": "No active selection"}
+            from PIL import ImageDraw
+            draw = ImageDraw.Draw(im)
+            if sel["type"] == "rect":
+                draw.rectangle([sel["x"], sel["y"], sel["x"] + sel["width"], sel["y"] + sel["height"]], fill=color)
+            self._store(image_id, im)
+            return {"ok": True, "image_id": image_id, "fill": color}
+        except KeyError as e:
+            return {"ok": False, "error": str(e)}
+
+    def stroke_selection(self, image_id: str, width: int = 2, color: str = "#000000") -> dict[str, Any]:
+        try:
+            im = self._load(image_id)
+            sel = getattr(self, "_selections", {}).get(image_id)
+            if sel is None:
+                return {"ok": False, "error": "No active selection"}
+            from PIL import ImageDraw
+            draw = ImageDraw.Draw(im)
+            if sel["type"] == "rect":
+                draw.rectangle(
+                    [sel["x"], sel["y"], sel["x"] + sel["width"], sel["y"] + sel["height"]],
+                    outline=color, width=width)
+            self._store(image_id, im)
+            return {"ok": True, "image_id": image_id, "stroke": color, "width": width}
+        except KeyError as e:
+            return {"ok": False, "error": str(e)}
+

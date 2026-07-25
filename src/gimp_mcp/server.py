@@ -311,5 +311,49 @@ def gimp_exif(image_id: str) -> str:
     return _j(get_backend().exif(image_id))
 
 
+# ── Filters pack (#4) ──
+
+@mcp.tool()
+def gimp_sharpen(image_id: str, radius: float = 2.0, percent: float = 150) -> str:
+    """Apply unsharp-mask sharpen filter to an image."""
+    return _j(get_backend().sharpen(image_id, radius, percent))
+
+
+@mcp.tool()
+def gimp_emboss(image_id: str) -> str:
+    """Apply emboss filter to an image."""
+    return _j(get_backend().emboss(image_id))
+
+
+@mcp.tool()
+def gimp_brightness_contrast(
+    image_id: str, brightness: float = 1.0, contrast: float = 1.0
+) -> str:
+    """Adjust brightness (0.0-2.0) and contrast (0.0-2.0) of an image."""
+    return _j(get_backend().brightness_contrast(image_id, brightness, contrast))
+
+
+# ── Selection + fill/stroke (#7) ──
+
+@mcp.tool()
+def gimp_select_rect(
+    image_id: str, x: int = 0, y: int = 0, width: int = 100, height: int = 100
+) -> str:
+    """Create a rectangular selection on an image."""
+    return _j(get_backend().select_rect(image_id, x, y, width, height))
+
+
+@mcp.tool()
+def gimp_fill_selection(image_id: str, color: str = "#ff0000") -> str:
+    """Fill the current selection with a solid color."""
+    return _j(get_backend().fill_selection(image_id, color))
+
+
+@mcp.tool()
+def gimp_stroke_selection(image_id: str, width: int = 2, color: str = "#000000") -> str:
+    """Stroke (outline) the current selection."""
+    return _j(get_backend().stroke_selection(image_id, width, color))
+
+
 def run_stdio() -> None:
     mcp.run(transport="stdio")
