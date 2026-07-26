@@ -466,3 +466,17 @@ def stroke_op(im, sel, width=2, color='#000000'):
     draw=ImageDraw.Draw(im)
     if sel['type']=='rect': draw.rectangle([sel['x'],sel['y'],sel['x']+sel['width'],sel['y']+sel['height']],outline=color,width=width)
     return im
+
+def sharpen_op(im, radius=2.0, percent=150): return im.filter(ImageFilter.UnsharpMask(radius=radius, percent=int(percent)))
+def emboss_op(im): return im.filter(ImageFilter.EMBOSS)
+def brightness_contrast_op(im, brightness=1.0, contrast=1.0):
+    im=ImageEnhance.Brightness(im).enhance(brightness)
+    return ImageEnhance.Contrast(im).enhance(contrast)
+def fill_op(im, sel, color='#ff0000'):
+    draw=ImageDraw.Draw(im)
+    if sel['type']=='rect': draw.rectangle([sel['x'],sel['y'],sel['x']+sel['width'],sel['y']+sel['height']],fill=color)
+    return im
+def stroke_op(im, sel, width=2, color='#000000'):
+    draw=ImageDraw.Draw(im)
+    if sel['type']=='rect': draw.rectangle([sel['x'],sel['y'],sel['x']+sel['width'],sel['y']+sel['height']],outline=color,width=width)
+    return im
