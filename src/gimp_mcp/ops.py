@@ -480,3 +480,13 @@ def stroke_op(im, sel, width=2, color='#000000'):
     draw=ImageDraw.Draw(im)
     if sel['type']=='rect': draw.rectangle([sel['x'],sel['y'],sel['x']+sel['width'],sel['y']+sel['height']],outline=color,width=width)
     return im
+
+def batch_process(images, operation, **kwargs):
+    return [globals().get(operation+'_op', lambda x,**kw: x)(im, **kwargs) for im in images]
+def apply_filter_chain(im, filters):
+    for f in filters:
+        name = f.get('name')
+        if name == 'sharpen': im = sharpen_op(im, **f.get('params',{}))
+        elif name == 'emboss': im = emboss_op(im)
+        elif name == 'brightness_contrast': im = brightness_contrast_op(im, **f.get('params',{}))
+    return im
