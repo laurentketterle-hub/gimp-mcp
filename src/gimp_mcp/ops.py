@@ -544,3 +544,10 @@ def color_balance(im, cyan_red=0, magenta_green=0, yellow_blue=0):
     b=b.point(lambda i:min(255,max(0,i+yellow_blue)))
     from PIL import Image
     return Image.merge("RGB",(r,g,b))
+
+def edge_detect_op(im): return im.filter(ImageFilter.FIND_EDGES)
+def blur_op(im, r=2): return im.filter(ImageFilter.GaussianBlur(r))
+def contour_op(im): return im.filter(ImageFilter.CONTOUR)
+def detail_op(im): return im.filter(ImageFilter.DETAIL)
+def smooth_op(im): return im.filter(ImageFilter.SMOOTH)
+def crop_op(im, x, y, w, h): return im.crop((int(x),int(y),int(x)+int(w),int(y)+int(h)))
