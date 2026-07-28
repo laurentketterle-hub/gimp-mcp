@@ -260,7 +260,8 @@ def gimp_pipeline(image_id: str, steps_json: str) -> str:
     Apply a multi-step recipe. steps_json is a JSON array of objects with 'op' plus params.
     Ops include: auto_orient, resize, thumbnail, crop, crop_bottom, crop_percent, flip,
     rotate, blur, sharpen, desaturate, invert, brightness, contrast, saturation, text,
-    erase_rect, fill_rect, remove_background, trim, pad, border, opacity.
+    erase_rect, fill_rect, remove_background, trim, pad, border, opacity,
+    edge_detect, smooth, detail.
     """
     steps = json.loads(steps_json)
     if not isinstance(steps, list):
@@ -331,6 +332,24 @@ def gimp_brightness_contrast(
 ) -> str:
     """Adjust brightness (0.0-2.0) and contrast (0.0-2.0) of an image."""
     return _j(get_backend().brightness_contrast(image_id, brightness, contrast))
+
+
+@mcp.tool()
+def gimp_edge_detect(image_id: str) -> str:
+    """Apply edge detection (Sobel-style outlines) filter to an image."""
+    return _j(get_backend().edge_detect(image_id))
+
+
+@mcp.tool()
+def gimp_smooth(image_id: str) -> str:
+    """Apply smooth/blur filter to an image."""
+    return _j(get_backend().smooth(image_id))
+
+
+@mcp.tool()
+def gimp_detail(image_id: str) -> str:
+    """Apply detail enhancement (edge sharpening + texture) filter to an image."""
+    return _j(get_backend().detail(image_id))
 
 
 # ── Selection + fill/stroke (#7) ──

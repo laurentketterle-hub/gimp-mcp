@@ -32,3 +32,18 @@ def test_stroke_op(img):
     sel = {"type": "rect", "x": 10, "y": 10, "width": 50, "height": 50}
     result = stroke_op(img, sel, 3, "#0000ff")
     assert result.size == img.size
+
+def test_edge_detect(img):
+    from gimp_mcp.ops import edge_detect_op
+    result = edge_detect_op(img)
+    assert result.size == img.size
+
+def test_smooth(img):
+    from gimp_mcp.ops import smooth_op
+    result = smooth_op(img)
+    assert result.size == img.size
+
+def test_detail(img):
+    from gimp_mcp.ops import detail_op
+    result = detail_op(img)
+    assert result.size == img.size

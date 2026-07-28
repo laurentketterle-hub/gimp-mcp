@@ -442,6 +442,36 @@ class MockBackend:
         except KeyError as e:
             return {"ok": False, "error": str(e)}
 
+    def edge_detect(self, image_id: str) -> dict[str, Any]:
+        try:
+            im = self._load(image_id)
+            from PIL import ImageFilter
+            out = im.filter(ImageFilter.FIND_EDGES)
+            self._store(image_id, out)
+            return {"ok": True, "image_id": image_id, "filter": "edge_detect"}
+        except KeyError as e:
+            return {"ok": False, "error": str(e)}
+
+    def smooth(self, image_id: str) -> dict[str, Any]:
+        try:
+            im = self._load(image_id)
+            from PIL import ImageFilter
+            out = im.filter(ImageFilter.SMOOTH)
+            self._store(image_id, out)
+            return {"ok": True, "image_id": image_id, "filter": "smooth"}
+        except KeyError as e:
+            return {"ok": False, "error": str(e)}
+
+    def detail(self, image_id: str) -> dict[str, Any]:
+        try:
+            im = self._load(image_id)
+            from PIL import ImageFilter
+            out = im.filter(ImageFilter.DETAIL)
+            self._store(image_id, out)
+            return {"ok": True, "image_id": image_id, "filter": "detail"}
+        except KeyError as e:
+            return {"ok": False, "error": str(e)}
+
     # ── Selection + fill/stroke (#7) ──
 
     def select_rect(self, image_id: str, x: int = 0, y: int = 0, width: int = 100, height: int = 100) -> dict[str, Any]:
