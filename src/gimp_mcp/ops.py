@@ -508,3 +508,39 @@ def flip_horizontal(im):
 
 def flip_vertical(im):
     return im.transpose(Image.FLIP_TOP_BOTTOM)
+
+def grayscale_op(im):
+    return im.convert("L").convert("RGB")
+
+def invert_op(im):
+    from PIL import ImageOps
+    return ImageOps.invert(im.convert("RGB"))
+
+def sepia_op(im):
+    im=im.convert("RGB")
+    w,h=im.size
+    for y in range(h):
+        for x in range(w):
+            r,g,b=im.getpixel((x,y))
+            tr=int(0.393*r+0.769*g+0.189*b)
+            tg=int(0.349*r+0.686*g+0.168*b)
+            tb=int(0.272*r+0.534*g+0.131*b)
+            im.putpixel((x,y),(min(tr,255),min(tg,255),min(tb,255)))
+    return im
+
+def posterize_op(im, levels=4):
+    from PIL import ImageOps
+    return ImageOps.posterize(im.convert("RGB"), levels)
+
+def solarize_op(im, threshold=128):
+    from PIL import ImageOps
+    return ImageOps.solarize(im.convert("RGB"), threshold)
+
+def color_balance(im, cyan_red=0, magenta_green=0, yellow_blue=0):
+    im=im.convert("RGB")
+    r,g,b=im.split()
+    r=r.point(lambda i:min(255,max(0,i+cyan_red)))
+    g=g.point(lambda i:min(255,max(0,i+magenta_green)))
+    b=b.point(lambda i:min(255,max(0,i+yellow_blue)))
+    from PIL import Image
+    return Image.merge("RGB",(r,g,b))
