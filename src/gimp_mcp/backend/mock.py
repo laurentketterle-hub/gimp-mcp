@@ -382,7 +382,7 @@ class MockBackend:
         except KeyError as e:
             return {"ok": False, "error": str(e)}
 
-﻿    def histogram(self, image_id: str) -> dict[str, Any]:
+    def histogram(self, image_id: str) -> dict[str, Any]:
         """Calculate RGB histogram data (mock)."""
         try:
             im = self._load(image_id)
@@ -416,7 +416,7 @@ class MockBackend:
             im = self._load(image_id)
             from PIL import ImageFilter
             out = im.filter(ImageFilter.UnsharpMask(radius=radius, percent=int(percent)))
-            self._store(image_id, out)
+            self._save_meta(image_id, out)
             return {"ok": True, "image_id": image_id, "filter": "sharpen"}
         except KeyError as e:
             return {"ok": False, "error": str(e)}
@@ -426,7 +426,7 @@ class MockBackend:
             im = self._load(image_id)
             from PIL import ImageFilter
             out = im.filter(ImageFilter.EMBOSS)
-            self._store(image_id, out)
+            self._save_meta(image_id, out)
             return {"ok": True, "image_id": image_id, "filter": "emboss"}
         except KeyError as e:
             return {"ok": False, "error": str(e)}
@@ -447,7 +447,7 @@ class MockBackend:
             im = self._load(image_id)
             from PIL import ImageFilter
             out = im.filter(ImageFilter.FIND_EDGES)
-            self._store(image_id, out)
+            self._save_meta(image_id, out)
             return {"ok": True, "image_id": image_id, "filter": "edge_detect"}
         except KeyError as e:
             return {"ok": False, "error": str(e)}
@@ -457,7 +457,7 @@ class MockBackend:
             im = self._load(image_id)
             from PIL import ImageFilter
             out = im.filter(ImageFilter.SMOOTH)
-            self._store(image_id, out)
+            self._save_meta(image_id, out)
             return {"ok": True, "image_id": image_id, "filter": "smooth"}
         except KeyError as e:
             return {"ok": False, "error": str(e)}
@@ -467,7 +467,7 @@ class MockBackend:
             im = self._load(image_id)
             from PIL import ImageFilter
             out = im.filter(ImageFilter.DETAIL)
-            self._store(image_id, out)
+            self._save_meta(image_id, out)
             return {"ok": True, "image_id": image_id, "filter": "detail"}
         except KeyError as e:
             return {"ok": False, "error": str(e)}
