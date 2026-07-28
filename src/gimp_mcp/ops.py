@@ -490,3 +490,21 @@ def apply_filter_chain(im, filters):
         elif name == 'emboss': im = emboss_op(im)
         elif name == 'brightness_contrast': im = brightness_contrast_op(im, **f.get('params',{}))
     return im
+
+def image_info(im):
+    return {"size": im.size, "mode": im.mode, "format": im.format if hasattr(im,"format") else None}
+
+def histogram_op(im):
+    return {c: im.histogram()[i*256:(i+1)*256] for i,c in enumerate(im.getbands())}
+
+def resize_op(im, width, height):
+    return im.resize((int(width), int(height)), Image.Resampling.LANCZOS)
+
+def rotate_op(im, angle, expand=True):
+    return im.rotate(float(angle), expand=expand)
+
+def flip_horizontal(im):
+    return im.transpose(Image.FLIP_LEFT_RIGHT)
+
+def flip_vertical(im):
+    return im.transpose(Image.FLIP_TOP_BOTTOM)
