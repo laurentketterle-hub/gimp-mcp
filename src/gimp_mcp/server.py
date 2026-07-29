@@ -381,6 +381,62 @@ def gimp_select_rect(
 
 
 @mcp.tool()
+def gimp_select_ellipse(
+    image_id: str, x: int = 0, y: int = 0, width: int = 100, height: int = 100
+) -> str:
+    """Create an elliptical selection on an image."""
+    return _j(get_backend().select_ellipse(image_id, x, y, width, height))
+
+
+@mcp.tool()
+def gimp_select_polygon(image_id: str, points_json: str = "[]") -> str:
+    """Create a polygon selection from JSON list of [x,y] points (e.g. '[[10,10],[90,10],[50,90]]')."""
+    return _j(get_backend().select_polygon(image_id, points_json))
+
+
+@mcp.tool()
+def gimp_select_all(image_id: str) -> str:
+    """Select the entire image."""
+    return _j(get_backend().select_all(image_id))
+
+
+@mcp.tool()
+def gimp_select_none(image_id: str) -> str:
+    """Clear any active selection for the image."""
+    return _j(get_backend().select_none(image_id))
+
+
+@mcp.tool()
+def gimp_get_selection(image_id: str) -> str:
+    """Get the current selection information for an image."""
+    return _j(get_backend().get_selection(image_id))
+
+
+@mcp.tool()
+def gimp_invert_selection(image_id: str) -> str:
+    """Invert the current selection (swap selected/unselected areas)."""
+    return _j(get_backend().invert_selection(image_id))
+
+
+@mcp.tool()
+def gimp_feather_selection(image_id: str, radius: float = 5.0) -> str:
+    """Apply feather (soft edge) to the current selection."""
+    return _j(get_backend().feather_selection(image_id, radius))
+
+
+@mcp.tool()
+def gimp_grow_selection(image_id: str, pixels: int = 5) -> str:
+    """Expand the current selection by N pixels in all directions."""
+    return _j(get_backend().grow_selection(image_id, pixels))
+
+
+@mcp.tool()
+def gimp_shrink_selection(image_id: str, pixels: int = 5) -> str:
+    """Shrink the current selection by N pixels in all directions."""
+    return _j(get_backend().shrink_selection(image_id, pixels))
+
+
+@mcp.tool()
 def gimp_fill_selection(image_id: str, color: str = "#ff0000") -> str:
     """Fill the current selection with a solid color."""
     return _j(get_backend().fill_selection(image_id, color))

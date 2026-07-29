@@ -706,3 +706,122 @@ class LiveBackend:
             "error": "flatten is mock-only; use in mock mode",
         }
 
+    # ── Selection operations (Pillow assist) ──
+
+    def select_rect(self, image_id: str, x: int = 0, y: int = 0, width: int = 100, height: int = 100) -> dict[str, Any]:
+        if not hasattr(self, "_selections"):
+            self._selections = {}
+        self._selections[image_id] = {"type": "rect", "x": int(x), "y": int(y), "width": int(width), "height": int(height)}
+        return {"ok": True, "image_id": image_id, "selection": self._selections[image_id], "engine": "live-selection"}
+
+    def select_ellipse(self, image_id: str, x: int = 0, y: int = 0, width: int = 100, height: int = 100) -> dict[str, Any]:
+        if not hasattr(self, "_selections"):
+            self._selections = {}
+        self._selections[image_id] = {"type": "ellipse", "x": int(x), "y": int(y), "width": int(width), "height": int(height)}
+        return {"ok": True, "image_id": image_id, "selection": self._selections[image_id], "engine": "live-selection"}
+
+    def select_polygon(self, image_id: str, points_json: str = "[]") -> dict[str, Any]:
+        import json
+        try:
+            points = json.loads(points_json)
+        except json.JSONDecodeError as e:
+            return {"ok": False, "error": f"Invalid points JSON: {e}"}
+        if not hasattr(self, "_selections"):
+            self._selections = {}
+        self._selections[image_id] = {"type": "polygon", "points": points}
+        return {"ok": True, "image_id": image_id, "selection": self._selections[image_id], "engine": "live-selection"}
+
+    def select_all(self, image_id: str) -> dict[str, Any]:
+        try:
+            im = self._load_im(image_id)
+        except KeyError:
+            return {"ok": False, "error": f"unknown image_id={image_id}"}
+        if not hasattr(self, "_selections"):
+            self._selections = {}
+        self._selections[image_id] = {"type": "rect", "x": 0, "y": 0, "width": im.width, "height": im.height}
+        return {"ok": True, "image_id": image_id, "selection": self._selections[image_id], "engine": "live-selection"}
+
+    def select_none(self, image_id: str) -> dict[str, Any]:
+        if hasattr(self, "_selections") and image_id in self._selections:
+            del self._selections[image_id]
+        return {"ok": True, "image_id": image_id, "selection": None, "engine": "live-selection"}
+
+    def get_selection(self, image_id: str) -> dict[str, Any]:
+        sel = getattr(self, "_selections", {}).get(image_id)
+        return {"ok": True, "image_id": image_id, "selection": sel, "engine": "live-selection"}
+
+    def invert_selection(self, image_id: str) -> dict[str, Any]:
+        try:
+            im = self._load_im(image_id)
+        except KeyError:
+            return {"ok": False, "error": f"unknown image_id={image_id}"}
+        if not hasattr(self, "_selections") or image_id not in self._selections:
+            return {"ok": False, "error": "No active selection to invert"}
+        self._selections[image_id] = {"type": "rect", "x": 0, "y": 0, "width": im.width, "height": im.height}
+        return {"ok": True, "image_id": image_id, "selection": self._selections[image_id], "inverted": True, "engine": "live-selection"}
+
+    def feather_selection(self, image_id: str, radius: float = 5.0) -> dict[str, Any]:
+        sel = getattr(self, "_selections", {}).get(image_id)
+        if sel is None:
+            return {"ok": False, "error": "No active selection"}
+        sel["feather"] = float(radius)
+        return {"ok": True, "image_id": image_id, "selection": sel, "engine": "live-selection"}
+
+    def grow_selection(self, image_id: str, pixels: int = 5) -> dict[str, Any]:
+        sel = getattr(self, "_selections", {}).get(image_id)
+        if sel is None:
+            return {"ok": False, "error": "No active selection"}
+        p = int(pixels)
+        if sel["type"] in ("rect", "ellipse"):
+            sel["x"] -= p
+            sel["y"] -= p
+            sel["width"] += 2 * p
+            sel["height"] += 2 * p
+        return {"ok": True, "image_id": image_id, "selection": sel, "engine": "live-selection"}
+
+    def shrink_selection(self, image_id: str, pixels: int = 5) -> dict[str, Any]:
+        sel = getattr(self, "_selections", {}).get(image_id)
+        if sel is None:
+            return {"ok": False, "error": "No active selection"}
+        p = int(pixels)
+        if sel["type"] in ("rect", "ellipse"):
+            sel["x"] += p
+            sel["y"] += p
+            sel["width"] = max(1, sel["width"] - 2 * p)
+            sel["height"] = max(1, sel["height"] - 2 * p)
+        return {"ok": True, "image_id": image_id, "selection": sel, "engine": "live-selection"}
+
+    def fill_selection(self, image_id: str, color: str = "#ff0000") -> dict[str, Any]:
+        try:
+            im = self._load_im(image_id)
+        except KeyError:
+            return {"ok": False, "error": f"unknown image_id={image_id}"}
+        sel = getattr(self, "_selections", {}).get(image_id)
+        if sel is None:
+            return {"ok": False, "error": "No active selection"}
+        from PIL import ImageDraw
+        draw = ImageDraw.Draw(im)
+        if sel["type"] == "rect":
+            draw.rectangle([sel["x"], sel["y"], sel["x"] + sel["width"], sel["y"] + sel["height"]], fill=color)
+        elif sel["type"] == "ellipse":
+            draw.ellipse([sel["x"], sel["y"], sel["x"] + sel["width"], sel["y"] + sel["height"]], fill=color)
+        self._store(image_id, im, "fill_selection")
+        return {"ok": True, "image_id": image_id, "fill": color, "engine": "live-selection"}
+
+    def stroke_selection(self, image_id: str, width: int = 2, color: str = "#000000") -> dict[str, Any]:
+        try:
+            im = self._load_im(image_id)
+        except KeyError:
+            return {"ok": False, "error": f"unknown image_id={image_id}"}
+        sel = getattr(self, "_selections", {}).get(image_id)
+        if sel is None:
+            return {"ok": False, "error": "No active selection"}
+        from PIL import ImageDraw
+        draw = ImageDraw.Draw(im)
+        if sel["type"] == "rect":
+            draw.rectangle([sel["x"], sel["y"], sel["x"] + sel["width"], sel["y"] + sel["height"]], outline=color, width=width)
+        elif sel["type"] == "ellipse":
+            draw.ellipse([sel["x"], sel["y"], sel["x"] + sel["width"], sel["y"] + sel["height"]], outline=color, width=width)
+        self._store(image_id, im, "stroke_selection")
+        return {"ok": True, "image_id": image_id, "stroke": color, "width": width, "engine": "live-selection"}
+

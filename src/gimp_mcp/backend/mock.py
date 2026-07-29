@@ -49,6 +49,18 @@ OPS_LIST = [
     "list_layers",
     "new_layer",
     "flatten",
+    "select_rect",
+    "select_ellipse",
+    "select_polygon",
+    "select_all",
+    "select_none",
+    "get_selection",
+    "invert_selection",
+    "feather_selection",
+    "grow_selection",
+    "shrink_selection",
+    "fill_selection",
+    "stroke_selection",
 ]
 
 
@@ -515,6 +527,122 @@ class MockBackend:
                 self._selections = {}
             self._selections[image_id] = {"type": "rect", "x": x, "y": y, "width": width, "height": height}
             return {"ok": True, "image_id": image_id, "selection": {"x": x, "y": y, "width": width, "height": height}}
+        except KeyError as e:
+            return {"ok": False, "error": str(e)}
+
+    def select_ellipse(self, image_id: str, x: int = 0, y: int = 0, width: int = 100, height: int = 100) -> dict[str, Any]:
+        """Create an elliptical selection on an image."""
+        try:
+            self._load(image_id)
+            if not hasattr(self, "_selections"):
+                self._selections = {}
+            self._selections[image_id] = {"type": "ellipse", "x": x, "y": y, "width": width, "height": height}
+            return {"ok": True, "image_id": image_id, "selection": {"type": "ellipse", "x": x, "y": y, "width": width, "height": height}}
+        except KeyError as e:
+            return {"ok": False, "error": str(e)}
+
+    def select_polygon(self, image_id: str, points_json: str = "[]") -> dict[str, Any]:
+        """Create a polygon selection from JSON list of [x,y] points."""
+        try:
+            self._load(image_id)
+            import json
+            points = json.loads(points_json)
+            if not hasattr(self, "_selections"):
+                self._selections = {}
+            self._selections[image_id] = {"type": "polygon", "points": points}
+            return {"ok": True, "image_id": image_id, "selection": {"type": "polygon", "points": points}}
+        except KeyError as e:
+            return {"ok": False, "error": str(e)}
+        except json.JSONDecodeError as e:
+            return {"ok": False, "error": f"Invalid points JSON: {e}"}
+
+    def select_all(self, image_id: str) -> dict[str, Any]:
+        """Select the entire image."""
+        try:
+            im = self._load(image_id)
+            if not hasattr(self, "_selections"):
+                self._selections = {}
+            self._selections[image_id] = {"type": "rect", "x": 0, "y": 0, "width": im.width, "height": im.height}
+            return {"ok": True, "image_id": image_id, "selection": {"type": "rect", "x": 0, "y": 0, "width": im.width, "height": im.height}}
+        except KeyError as e:
+            return {"ok": False, "error": str(e)}
+
+    def select_none(self, image_id: str) -> dict[str, Any]:
+        """Clear any active selection for the image."""
+        try:
+            self._load(image_id)
+            if hasattr(self, "_selections") and image_id in self._selections:
+                del self._selections[image_id]
+            return {"ok": True, "image_id": image_id, "selection": None}
+        except KeyError as e:
+            return {"ok": False, "error": str(e)}
+
+    def get_selection(self, image_id: str) -> dict[str, Any]:
+        """Get the current selection for an image."""
+        try:
+            self._load(image_id)
+            sel = getattr(self, "_selections", {}).get(image_id)
+            if sel is None:
+                return {"ok": True, "image_id": image_id, "selection": None}
+            return {"ok": True, "image_id": image_id, "selection": sel}
+        except KeyError as e:
+            return {"ok": False, "error": str(e)}
+
+    def invert_selection(self, image_id: str) -> dict[str, Any]:
+        """Invert the current selection."""
+        try:
+            im = self._load(image_id)
+            if not hasattr(self, "_selections") or image_id not in self._selections:
+                return {"ok": False, "error": "No active selection to invert"}
+            # In mock mode, invert = select all
+            self._selections[image_id] = {"type": "rect", "x": 0, "y": 0, "width": im.width, "height": im.height}
+            return {"ok": True, "image_id": image_id, "selection": self._selections[image_id], "inverted": True}
+        except KeyError as e:
+            return {"ok": False, "error": str(e)}
+
+    def feather_selection(self, image_id: str, radius: float = 5.0) -> dict[str, Any]:
+        """Apply feather (soft edge) to the current selection."""
+        try:
+            self._load(image_id)
+            sel = getattr(self, "_selections", {}).get(image_id)
+            if sel is None:
+                return {"ok": False, "error": "No active selection"}
+            sel["feather"] = float(radius)
+            return {"ok": True, "image_id": image_id, "selection": sel}
+        except KeyError as e:
+            return {"ok": False, "error": str(e)}
+
+    def grow_selection(self, image_id: str, pixels: int = 5) -> dict[str, Any]:
+        """Expand selection by N pixels."""
+        try:
+            self._load(image_id)
+            sel = getattr(self, "_selections", {}).get(image_id)
+            if sel is None:
+                return {"ok": False, "error": "No active selection"}
+            p = int(pixels)
+            if sel["type"] in ("rect", "ellipse"):
+                sel["x"] -= p
+                sel["y"] -= p
+                sel["width"] += 2 * p
+                sel["height"] += 2 * p
+            return {"ok": True, "image_id": image_id, "selection": sel}
+        except KeyError as e:
+            return {"ok": False, "error": str(e)}
+
+    def shrink_selection(self, image_id: str, pixels: int = 5) -> dict[str, Any]:
+        """Shrink selection by N pixels."""
+        try:
+            self._load(image_id)
+            sel = getattr(self, "_selections", {}).get(image_id)
+            if sel is None:
+                return {"ok": False, "error": "No active selection"}
+            p = int(pixels)
+            if sel["type"] in ("rect", "ellipse"):
+                sel["x"] += p
+                sel["y"] += p
+                sel["width"] = max(1, sel["width"] - 2 * p)
+                sel["height"] = max(1, sel["height"] - 2 * p)
+            return {"ok": True, "image_id": image_id, "selection": sel}
         except KeyError as e:
             return {"ok": False, "error": str(e)}
 
