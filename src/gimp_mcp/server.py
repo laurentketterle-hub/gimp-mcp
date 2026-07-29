@@ -327,6 +327,24 @@ def gimp_emboss(image_id: str) -> str:
 
 
 @mcp.tool()
+def gimp_edge_detect(image_id: str) -> str:
+    """Edge detection filter — Sobel-like edge finding."""
+    return _j(get_backend().edge_detect(image_id))
+
+
+@mcp.tool()
+def gimp_smooth(image_id: str, radius: float = 2.0) -> str:
+    """Smooth/blur filter — light softening."""
+    return _j(get_backend().smooth(image_id, radius))
+
+
+@mcp.tool()
+def gimp_detail(image_id: str, factor: float = 1.5) -> str:
+    """Detail enhancement — subtle sharpness boost."""
+    return _j(get_backend().detail(image_id, factor))
+
+
+@mcp.tool()
 def gimp_brightness_contrast(
     image_id: str, brightness: float = 1.0, contrast: float = 1.0
 ) -> str:

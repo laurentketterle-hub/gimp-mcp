@@ -25,6 +25,9 @@ OPS_LIST = [
     "blur",
     "sharpen",
     "desaturate",
+    "edge_detect",
+    "smooth",
+    "detail",
     "invert",
     "brightness",
     "contrast",
@@ -86,6 +89,10 @@ class MockBackend:
         )
         self._images[image_id] = meta
         return dict(meta)
+
+    def _store(self, image_id: str, im: Image.Image) -> None:
+        """Alias for _save_meta — stores image in-memory."""
+        self._save_meta(image_id, im)
 
     def doctor(self) -> dict[str, Any]:
         return {
@@ -428,6 +435,33 @@ class MockBackend:
             out = im.filter(ImageFilter.EMBOSS)
             self._save_meta(image_id, out)
             return {"ok": True, "image_id": image_id, "filter": "emboss"}
+        except KeyError as e:
+            return {"ok": False, "error": str(e)}
+
+    def edge_detect(self, image_id: str) -> dict[str, Any]:
+        try:
+            im = self._load(image_id)
+            out = ops.edge_detect(im)
+            self._store(image_id, out)
+            return {"ok": True, "image_id": image_id, "filter": "edge_detect"}
+        except KeyError as e:
+            return {"ok": False, "error": str(e)}
+
+    def smooth(self, image_id: str, radius: float = 2.0) -> dict[str, Any]:
+        try:
+            im = self._load(image_id)
+            out = ops.smooth(im, radius)
+            self._store(image_id, out)
+            return {"ok": True, "image_id": image_id, "filter": "smooth"}
+        except KeyError as e:
+            return {"ok": False, "error": str(e)}
+
+    def detail(self, image_id: str, factor: float = 1.5) -> dict[str, Any]:
+        try:
+            im = self._load(image_id)
+            out = ops.detail(im, factor)
+            self._store(image_id, out)
+            return {"ok": True, "image_id": image_id, "filter": "detail"}
         except KeyError as e:
             return {"ok": False, "error": str(e)}
 

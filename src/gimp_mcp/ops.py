@@ -116,6 +116,22 @@ def desaturate(im: Image.Image) -> Image.Image:
     return ImageOps.grayscale(im).convert("RGB")
 
 
+def edge_detect(im: Image.Image) -> Image.Image:
+    """Edge detection — uses Pillow FIND_EDGES (like GIMP Sobel)."""
+    rgb = im.convert("RGB") if im.mode == "RGBA" else im
+    return rgb.filter(ImageFilter.FIND_EDGES)
+
+
+def smooth(im: Image.Image, radius: float = 2.0) -> Image.Image:
+    """Smooth/blur filter — light softening (SMOOTH_MORE)."""
+    return im.filter(ImageFilter.SMOOTH_MORE)
+
+
+def detail(im: Image.Image, factor: float = 1.5) -> Image.Image:
+    """Detail enhancement — sharpness boost without harsh edges."""
+    return ImageEnhance.Sharpness(im).enhance(float(factor))
+
+
 def invert(im: Image.Image) -> Image.Image:
     if im.mode == "RGBA":
         a = im.split()[-1]
@@ -391,6 +407,9 @@ PIPELINE_OPS = {
     "blur": lambda im, **kw: blur(im, float(kw.get("radius", 2.0))),
     "sharpen": lambda im, **kw: sharpen(im, float(kw.get("percent", 150)), float(kw.get("radius", 2.0))),
     "desaturate": lambda im, **kw: desaturate(im),
+    "edge_detect": lambda im, **kw: edge_detect(im),
+    "smooth": lambda im, **kw: smooth(im, float(kw.get("radius", 2.0))),
+    "detail": lambda im, **kw: detail(im, float(kw.get("factor", 1.5))),
     "invert": lambda im, **kw: invert(im),
     "brightness": lambda im, **kw: brightness(im, float(kw.get("factor", 1.2))),
     "contrast": lambda im, **kw: contrast(im, float(kw.get("factor", 1.2))),
