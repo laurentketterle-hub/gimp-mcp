@@ -350,6 +350,55 @@ def opacity(im: Image.Image, factor: float = 1.0) -> Image.Image:
     return Image.fromarray(arr.astype(np.uint8), "RGBA")
 
 
+# ── selection tools ──────────────────────────────────────────────
+
+
+def selection_rectangular(
+    im: Image.Image, x: int, y: int, width: int, height: int
+) -> tuple[Image.Image, dict[str, int]]:
+    """Define a rectangular selection region.
+    Returns the image unchanged + selection metadata.
+    """
+    w, h = im.size
+    x0 = max(0, int(x))
+    y0 = max(0, int(y))
+    x1 = min(w, x0 + max(1, int(width)))
+    y1 = min(h, y0 + max(1, int(height)))
+    sel = {"x": x0, "y": y0, "x1": x1, "y1": y1, "width": x1 - x0, "height": y1 - y0}
+    return im.copy(), sel
+
+
+def fill_selection(
+    im: Image.Image, x: int, y: int, x1: int, y1: int, color: str = "#000000"
+) -> Image.Image:
+    """Fill a selected rectangular region with a solid color."""
+    out = im.copy()
+    if out.mode not in ("RGB", "RGBA"):
+        out = out.convert("RGBA")
+    draw = ImageDraw.Draw(out)
+    draw.rectangle((int(x), int(y), int(x1), int(y1)), fill=color)
+    return out
+
+
+def stroke_selection(
+    im: Image.Image,
+    x: int,
+    y: int,
+    x1: int,
+    y1: int,
+    color: str = "#000000",
+    width: int = 2,
+) -> Image.Image:
+    """Stroke (outline) a selection border with a color and width."""
+    out = im.copy()
+    if out.mode not in ("RGB", "RGBA"):
+        out = out.convert("RGBA")
+    draw = ImageDraw.Draw(out)
+    w = max(1, int(width))
+    draw.rectangle((int(x), int(y), int(x1), int(y1)), outline=color, width=w)
+    return out
+
+
 def export(im: Image.Image, path: str | Path, format: str | None = None) -> dict[str, Any]:
     out = Path(path)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -438,6 +487,30 @@ PIPELINE_OPS = {
     ),
     "border": lambda im, **kw: border(im, int(kw.get("width", 4)), str(kw.get("color", "#ffffff"))),
     "opacity": lambda im, **kw: opacity(im, float(kw.get("factor", 1.0))),
+    "selection_rectangular": lambda im, **kw: selection_rectangular(
+        im,
+        int(kw["x"]),
+        int(kw["y"]),
+        int(kw["width"]),
+        int(kw["height"]),
+    ),
+    "fill_selection": lambda im, **kw: fill_selection(
+        im,
+        int(kw.get("x", 0)),
+        int(kw.get("y", 0)),
+        int(kw.get("x1", im.width)),
+        int(kw.get("y1", im.height)),
+        str(kw.get("color", "#000000")),
+    ),
+    "stroke_selection": lambda im, **kw: stroke_selection(
+        im,
+        int(kw.get("x", 0)),
+        int(kw.get("y", 0)),
+        int(kw.get("x1", im.width)),
+        int(kw.get("y1", im.height)),
+        str(kw.get("color", "#000000")),
+        int(kw.get("width", 2)),
+    ),
 }
 
 

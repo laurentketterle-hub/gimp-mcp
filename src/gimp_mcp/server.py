@@ -298,8 +298,25 @@ def gimp_flatten(image_id: str) -> str:
     return _j(get_backend().flatten(image_id))
 
 
+@mcp.tool()
+def gimp_selection_rectangular(image_id: str, x: int, y: int, width: int, height: int) -> str:
+    """Create a rectangular selection on an image."""
+    return _j(get_backend().selection_rectangular(image_id, x, y, width, height))
 
-﻿@mcp.tool()
+
+@mcp.tool()
+def gimp_fill_selection(image_id: str, color: str = "#000000") -> str:
+    """Fill the current selection with a color."""
+    return _j(get_backend().fill_selection(image_id, color))
+
+
+@mcp.tool()
+def gimp_stroke_selection(image_id: str, color: str = "#000000", width: int = 2) -> str:
+    """Stroke (outline) the current selection."""
+    return _j(get_backend().stroke_selection(image_id, color, width))
+
+
+@mcp.tool()
 def gimp_histogram(image_id: str) -> str:
     """Get image histogram data (RGB channel distribution)."""
     return _j(get_backend().histogram(image_id))

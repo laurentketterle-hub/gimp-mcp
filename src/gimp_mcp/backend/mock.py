@@ -46,6 +46,9 @@ OPS_LIST = [
     "list_layers",
     "new_layer",
     "flatten",
+    "selection_rectangular",
+    "fill_selection",
+    "stroke_selection",
 ]
 
 
@@ -54,6 +57,7 @@ class MockBackend:
 
     def __init__(self) -> None:
         self._images: dict[str, dict[str, Any]] = {}
+        self._selection: dict[str, Any] | None = None
         self._ws = workspace_dir() / "mock"
         self._ws.mkdir(parents=True, exist_ok=True)
 
@@ -382,7 +386,7 @@ class MockBackend:
         except KeyError as e:
             return {"ok": False, "error": str(e)}
 
-﻿    def histogram(self, image_id: str) -> dict[str, Any]:
+    def histogram(self, image_id: str) -> dict[str, Any]:
         """Calculate RGB histogram data (mock)."""
         try:
             im = self._load(image_id)
@@ -406,6 +410,46 @@ class MockBackend:
                 ex = {}
             return {"ok": True, "image_id": image_id,
                     "exif": {str(k): str(v) for k, v in ex.items()}}
+        except KeyError as e:
+            return {"ok": False, "error": str(e)}
+
+    # ── selection tools ──────────────────────────────────────────
+
+    def selection_rectangular(
+        self, image_id: str, x: int, y: int, width: int, height: int
+    ) -> dict[str, Any]:
+        """Define a rectangular selection region on the image."""
+        try:
+            im = self._load(image_id)
+            _, sel = ops.selection_rectangular(im, x, y, width, height)
+            self._selection = sel
+            return {"ok": True, "image_id": image_id, "selection": sel}
+        except KeyError as e:
+            return {"ok": False, "error": str(e)}
+
+    def fill_selection(self, image_id: str, color: str = "#000000") -> dict[str, Any]:
+        """Fill the current selection with a solid color."""
+        try:
+            if not self._selection:
+                return {"ok": False, "error": "no active selection — call selection_rectangular first"}
+            im = self._load(image_id)
+            s = self._selection
+            im = ops.fill_selection(im, s["x"], s["y"], s["x1"], s["y1"], color)
+            return {"ok": True, "image": self._save_meta(image_id, im), "color": color}
+        except KeyError as e:
+            return {"ok": False, "error": str(e)}
+
+    def stroke_selection(
+        self, image_id: str, color: str = "#000000", width: int = 2
+    ) -> dict[str, Any]:
+        """Stroke (outline) the current selection border."""
+        try:
+            if not self._selection:
+                return {"ok": False, "error": "no active selection — call selection_rectangular first"}
+            im = self._load(image_id)
+            s = self._selection
+            im = ops.stroke_selection(im, s["x"], s["y"], s["x1"], s["y1"], color, width)
+            return {"ok": True, "image": self._save_meta(image_id, im), "color": color, "width": width}
         except KeyError as e:
             return {"ok": False, "error": str(e)}
 
