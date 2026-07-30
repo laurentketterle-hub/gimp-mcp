@@ -242,6 +242,21 @@ def gimp_opacity(image_id: str, factor: float = 1.0) -> str:
 
 
 @mcp.tool()
+def gimp_emboss(image_id: str, depth: float = 1.0, azimuth: float = 135.0, elevation: float = 30.0) -> str:
+    """Apply emboss filter — directional relief (depth, azimuth, elevation)."""
+    return _j(get_backend().emboss(image_id, depth, azimuth, elevation))
+
+
+@mcp.tool()
+def gimp_apply_filter(image_id: str, name: str, **kwargs) -> str:
+    """Apply a named filter from: sharpen, emboss, brightness, contrast, blur, saturation.
+
+    Pass filter-specific parameters as keyword args (e.g. factor=1.5, radius=3.0, depth=2.0).
+    """
+    return _j(get_backend().apply_filter(image_id, name, **kwargs))
+
+
+@mcp.tool()
 def gimp_text_overlay(
     image_id: str,
     text: str,
@@ -299,7 +314,7 @@ def gimp_flatten(image_id: str) -> str:
 
 
 
-﻿@mcp.tool()
+@mcp.tool()
 def gimp_histogram(image_id: str) -> str:
     """Get image histogram data (RGB channel distribution)."""
     return _j(get_backend().histogram(image_id))

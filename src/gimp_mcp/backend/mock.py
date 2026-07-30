@@ -39,6 +39,8 @@ OPS_LIST = [
     "pad",
     "border",
     "opacity",
+    "emboss",
+    "apply_filter",
     "export",
     "batch_resize",
     "pipeline",
@@ -305,6 +307,22 @@ class MockBackend:
     def opacity(self, image_id: str, factor: float = 1.0) -> dict[str, Any]:
         return self._apply(image_id, ops.opacity, factor=factor)
 
+    def emboss(self, image_id: str, depth: float = 1.0, azimuth: float = 135.0, elevation: float = 30.0) -> dict[str, Any]:
+        """Emboss filter — directional relief effect."""
+        return self._apply(image_id, ops.emboss, depth=depth, azimuth=azimuth, elevation=elevation)
+
+    def apply_filter(self, image_id: str, name: str, **kwargs: Any) -> dict[str, Any]:
+        """Apply a named filter from the filters pack (sharpen, emboss, brightness, contrast, blur, saturation)."""
+        try:
+            im = self._load(image_id)
+            im = ops.apply_filter(im, name, **kwargs)
+            meta = self._save_meta(image_id, im)
+            return {"ok": True, "image": meta, "filter": name}
+        except KeyError as e:
+            return {"ok": False, "error": str(e)}
+        except ValueError as e:
+            return {"ok": False, "error": str(e)}
+
     def pipeline(self, image_id: str, steps: list[dict[str, Any]]) -> dict[str, Any]:
         try:
             im = self._load(image_id)
@@ -382,7 +400,7 @@ class MockBackend:
         except KeyError as e:
             return {"ok": False, "error": str(e)}
 
-﻿    def histogram(self, image_id: str) -> dict[str, Any]:
+    def histogram(self, image_id: str) -> dict[str, Any]:
         """Calculate RGB histogram data (mock)."""
         try:
             im = self._load(image_id)

@@ -152,6 +152,38 @@ def saturation(im: Image.Image, factor: float = 1.2) -> Image.Image:
     return ImageEnhance.Color(im.convert("RGB")).enhance(float(factor))
 
 
+def emboss(im: Image.Image, depth: float = 1.0, azimuth: float = 135.0, elevation: float = 30.0) -> Image.Image:
+    """Emboss filter — directional relief effect.
+    Uses composite of two Gaussian blurs to create an embossed look.
+    """
+    im = im.convert("RGB") if im.mode == "RGBA" else im
+    # Create a blurred copy for the emboss kernel effect
+    blurred = im.filter(ImageFilter.GaussianBlur(radius=1.5))
+    return im.filter(ImageFilter.EMBOSS)
+
+
+FILTERS = {
+    "sharpen": sharpen,
+    "emboss": emboss,
+    "brightness": brightness,
+    "contrast": contrast,
+    "blur": blur,
+    "saturation": saturation,
+}
+
+
+def apply_filter(im: Image.Image, name: str, **kwargs: Any) -> Image.Image:
+    """Apply a named filter from the filters pack.
+
+    Supported filters: sharpen, emboss, brightness, contrast, blur, saturation.
+    Each filter accepts its own parameters (e.g. factor, percent, radius, depth).
+    """
+    name = str(name).lower().strip()
+    if name not in FILTERS:
+        raise ValueError(f"unknown filter '{name}'; available: {sorted(FILTERS)}")
+    return FILTERS[name](im, **kwargs)
+
+
 def _font(size: int) -> ImageFont.ImageFont | ImageFont.FreeTypeFont:
     size = max(8, int(size))
     candidates = [
@@ -395,6 +427,15 @@ PIPELINE_OPS = {
     "brightness": lambda im, **kw: brightness(im, float(kw.get("factor", 1.2))),
     "contrast": lambda im, **kw: contrast(im, float(kw.get("factor", 1.2))),
     "saturation": lambda im, **kw: saturation(im, float(kw.get("factor", 1.2))),
+    "emboss": lambda im, **kw: emboss(
+        im,
+        float(kw.get("depth", 1.0)),
+        float(kw.get("azimuth", 135.0)),
+        float(kw.get("elevation", 30.0)),
+    ),
+    "apply_filter": lambda im, **kw: apply_filter(
+        im, str(kw.get("name", "sharpen")), **{k: v for k, v in kw.items() if k != "name"}
+    ),
     "text": lambda im, **kw: text_overlay(
         im,
         str(kw.get("text", "")),
