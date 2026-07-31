@@ -5,7 +5,10 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from mcp.server.fastmcp import FastMCP
+try:
+    from mcp.server.fastmcp import FastMCP
+except ImportError:
+    from mcp.server import FastMCP  # mcp >= 2.0
 
 from gimp_mcp.backend import get_backend, switch_mode
 from gimp_mcp.config import get_mode
