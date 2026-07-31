@@ -46,6 +46,12 @@ OPS_LIST = [
     "list_layers",
     "new_layer",
     "flatten",
+    "select_rect",
+    "fill_selection",
+    "stroke_selection",
+    "clear_selection",
+    "get_selection",
+    "emboss",
 ]
 
 
@@ -54,6 +60,7 @@ class MockBackend:
 
     def __init__(self) -> None:
         self._images: dict[str, dict[str, Any]] = {}
+        self._selections: dict[str, dict[str, int] | None] = {}
         self._ws = workspace_dir() / "mock"
         self._ws.mkdir(parents=True, exist_ok=True)
 
@@ -361,7 +368,7 @@ class MockBackend:
     def new_layer(self, image_id: str, name: str = "New Layer") -> dict[str, Any]:
         """Create a new transparent layer."""
         try:
-            im = self._load(image_id)
+            _ = self._load(image_id)
             # In mock mode, we just return success
             # In real GIMP, this would create a new layer in the image
             return {
@@ -382,7 +389,7 @@ class MockBackend:
         except KeyError as e:
             return {"ok": False, "error": str(e)}
 
-﻿    def histogram(self, image_id: str) -> dict[str, Any]:
+    def histogram(self, image_id: str) -> dict[str, Any]:
         """Calculate RGB histogram data (mock)."""
         try:
             im = self._load(image_id)
@@ -408,4 +415,108 @@ class MockBackend:
                     "exif": {str(k): str(v) for k, v in ex.items()}}
         except KeyError as e:
             return {"ok": False, "error": str(e)}
+
+    # ------------------------------------------------------------------
+    # Selection tools (issue #7)
+    # ------------------------------------------------------------------
+
+    def select_rect(
+        self, image_id: str, x: int, y: int, width: int, height: int
+    ) -> dict[str, Any]:
+        """Define a rectangular selection on an image."""
+        try:
+            _ = self._get(image_id)
+        except KeyError as e:
+            return {"ok": False, "error": str(e)}
+        sel = {
+            "x": int(x),
+            "y": int(y),
+            "width": max(1, int(width)),
+            "height": max(1, int(height)),
+        }
+        self._selections[image_id] = sel
+        return {"ok": True, "image_id": image_id, "selection": sel}
+
+    def fill_selection(
+        self, image_id: str, color: str = "#000000", transparent: bool = False
+    ) -> dict[str, Any]:
+        """Fill the active selection with a solid color."""
+        try:
+            sel = self._selections.get(image_id)
+            if sel is None:
+                return {
+                    "ok": False,
+                    "error": f"no active selection on image {image_id}; call gimp_select_rect first",
+                }
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+        try:
+            im = self._load(image_id)
+            im = ops.selection_fill(
+                im,
+                sel["x"],
+                sel["y"],
+                sel["width"],
+                sel["height"],
+                color=color,
+                transparent=transparent,
+            )
+            return {"ok": True, "image": self._save_meta(image_id, im), "selection": sel}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
+    def stroke_selection(
+        self, image_id: str, color: str = "#000000", line_width: int = 2
+    ) -> dict[str, Any]:
+        """Stroke the outline of the active selection."""
+        try:
+            sel = self._selections.get(image_id)
+            if sel is None:
+                return {
+                    "ok": False,
+                    "error": f"no active selection on image {image_id}; call gimp_select_rect first",
+                }
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+        try:
+            im = self._load(image_id)
+            im = ops.selection_stroke(
+                im,
+                sel["x"],
+                sel["y"],
+                sel["width"],
+                sel["height"],
+                color=color,
+                line_width=line_width,
+            )
+            return {"ok": True, "image": self._save_meta(image_id, im), "selection": sel}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
+    def clear_selection(self, image_id: str) -> dict[str, Any]:
+        """Clear the active selection."""
+        try:
+            _ = self._get(image_id)
+        except KeyError as e:
+            return {"ok": False, "error": str(e)}
+        prev = self._selections.get(image_id)
+        self._selections[image_id] = None
+        return {"ok": True, "image_id": image_id, "cleared": prev is not None, "selection": None}
+
+    def get_selection(self, image_id: str) -> dict[str, Any]:
+        """Return the current selection state."""
+        try:
+            _ = self._get(image_id)
+        except KeyError as e:
+            return {"ok": False, "error": str(e)}
+        sel = self._selections.get(image_id)
+        return {"ok": True, "image_id": image_id, "selection": sel, "active": sel is not None}
+
+    # ------------------------------------------------------------------
+    # Filters (issue #4)
+    # ------------------------------------------------------------------
+
+    def emboss(self, image_id: str, depth: int = 3) -> dict[str, Any]:
+        """Apply emboss filter (edge-based relief)."""
+        return self._apply(image_id, ops.emboss, depth=depth)
 

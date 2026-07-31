@@ -299,7 +299,7 @@ def gimp_flatten(image_id: str) -> str:
 
 
 
-﻿@mcp.tool()
+@mcp.tool()
 def gimp_histogram(image_id: str) -> str:
     """Get image histogram data (RGB channel distribution)."""
     return _j(get_backend().histogram(image_id))
@@ -309,6 +309,50 @@ def gimp_histogram(image_id: str) -> str:
 def gimp_exif(image_id: str) -> str:
     """Read EXIF metadata from image (camera, GPS, orientation)."""
     return _j(get_backend().exif(image_id))
+
+
+# ------------------------------------------------------------------
+# Selection tools (issue #7)
+# ------------------------------------------------------------------
+
+@mcp.tool()
+def gimp_select_rect(image_id: str, x: int, y: int, width: int, height: int) -> str:
+    """Define a rectangular selection region on the image."""
+    return _j(get_backend().select_rect(image_id, x, y, width, height))
+
+
+@mcp.tool()
+def gimp_fill_selection(image_id: str, color: str = "#000000", transparent: bool = False) -> str:
+    """Fill the active selection with a solid color (requires gimp_select_rect first)."""
+    return _j(get_backend().fill_selection(image_id, color, transparent))
+
+
+@mcp.tool()
+def gimp_stroke_selection(image_id: str, color: str = "#000000", line_width: int = 2) -> str:
+    """Stroke the outline of the active selection (requires gimp_select_rect first)."""
+    return _j(get_backend().stroke_selection(image_id, color, line_width))
+
+
+@mcp.tool()
+def gimp_clear_selection(image_id: str) -> str:
+    """Clear the active selection on the image."""
+    return _j(get_backend().clear_selection(image_id))
+
+
+@mcp.tool()
+def gimp_get_selection(image_id: str) -> str:
+    """Return the current selection state (bounds or None)."""
+    return _j(get_backend().get_selection(image_id))
+
+
+# ------------------------------------------------------------------
+# Filter pack (issue #4)
+# ------------------------------------------------------------------
+
+@mcp.tool()
+def gimp_emboss(image_id: str, depth: int = 3) -> str:
+    """Apply emboss filter for edge-based relief effect."""
+    return _j(get_backend().emboss(image_id, depth))
 
 
 def run_stdio() -> None:

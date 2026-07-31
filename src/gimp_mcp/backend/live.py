@@ -11,6 +11,7 @@ import time
 from pathlib import Path
 from typing import Any
 
+from gimp_mcp import ops
 from gimp_mcp.config import batch_timeout_sec, gimp_bin, workspace_dir
 
 _version_cache: dict[str, Any] = {"exe": None, "major": None, "lines": None}
@@ -240,7 +241,7 @@ class LiveBackend:
                 "returncode": proc.returncode,
                 "log_tail": out[-2000:],
             }
-﻿        except subprocess.TimeoutExpired:
+        except subprocess.TimeoutExpired:
             # Kill hung gimp-console process
             import psutil
             for proc in psutil.process_iter(["pid", "name"]):
@@ -705,4 +706,53 @@ class LiveBackend:
             "ok": False,
             "error": "flatten is mock-only; use in mock mode",
         }
+
+    # ------------------------------------------------------------------
+    # Selection tools (live GIMP does not yet support selections via batch)
+    # ------------------------------------------------------------------
+
+    def select_rect(
+        self, image_id: str, x: int, y: int, width: int, height: int
+    ) -> dict[str, Any]:
+        return {
+            "ok": False,
+            "error": "live gimp-console does not yet support selections; switch to mock mode",
+        }
+
+    def fill_selection(
+        self, image_id: str, color: str = "#000000", transparent: bool = False
+    ) -> dict[str, Any]:
+        return {
+            "ok": False,
+            "error": "live gimp-console does not yet support selections; switch to mock mode",
+        }
+
+    def stroke_selection(
+        self, image_id: str, color: str = "#000000", line_width: int = 2
+    ) -> dict[str, Any]:
+        return {
+            "ok": False,
+            "error": "live gimp-console does not yet support selections; switch to mock mode",
+        }
+
+    def clear_selection(self, image_id: str) -> dict[str, Any]:
+        return {"ok": True, "image_id": image_id, "message": "no selection to clear in live mode"}
+
+    def get_selection(self, image_id: str) -> dict[str, Any]:
+        return {"ok": True, "image_id": image_id, "selection": None, "active": False}
+
+    # ------------------------------------------------------------------
+    # Filter pack — emboss (live mode uses Pillow assist)
+    # ------------------------------------------------------------------
+
+    def emboss(self, image_id: str, depth: int = 3) -> dict[str, Any]:
+        """Emboss filter via Pillow assist in live mode."""
+        try:
+            im = self._load(image_id)
+            im = ops.emboss(im, depth=depth)
+            return {"ok": True, "image": self._save_meta(image_id, im)}
+        except KeyError as e:
+            return {"ok": False, "error": str(e)}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
 

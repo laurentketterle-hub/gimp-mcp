@@ -438,7 +438,101 @@ PIPELINE_OPS = {
     ),
     "border": lambda im, **kw: border(im, int(kw.get("width", 4)), str(kw.get("color", "#ffffff"))),
     "opacity": lambda im, **kw: opacity(im, float(kw.get("factor", 1.0))),
+    "emboss": lambda im, **kw: emboss(im, int(kw.get("depth", 3))),
+    "selection_fill": lambda im, **kw: selection_fill(
+        im,
+        int(kw["x"]),
+        int(kw["y"]),
+        int(kw["width"]),
+        int(kw["height"]),
+        str(kw.get("color", "#000000")),
+        bool(kw.get("transparent", False)),
+    ),
+    "selection_stroke": lambda im, **kw: selection_stroke(
+        im,
+        int(kw["x"]),
+        int(kw["y"]),
+        int(kw["width"]),
+        int(kw["height"]),
+        str(kw.get("color", "#000000")),
+        int(kw.get("line_width", 2)),
+    ),
 }
+
+
+def emboss(im: Image.Image, depth: int = 3) -> Image.Image:
+    """Emboss filter: directional edge-based relief via a 3x3 convolution kernel."""
+    from PIL import ImageFilter
+
+    depth = max(1, int(depth))
+    # Directional emboss kernel (GIMP-like diagonal brush)
+    scale = 1.0 + (depth - 3) * 0.3
+    kernel = (
+        int(-2 * scale), int(-1 * scale), 0,
+        int(-1 * scale), 0, int(1 * scale),
+        0, int(1 * scale), int(2 * scale),
+    )
+    gray = im.convert("L")
+    embossed = gray.filter(ImageFilter.Kernel((3, 3), kernel, scale=1, offset=128))
+    # Blend with neutral base for relief look
+    base = ImageOps.grayscale(im.convert("RGB"))
+    blend_factor = 0.55 + min(depth, 10) * 0.04
+    out = Image.blend(base, embossed, blend_factor)
+    if im.mode == "RGBA":
+        a = im.split()[3]
+        out = out.convert("RGB")
+        out.putalpha(a)
+    else:
+        if out.mode == "L":
+            out = out.convert("RGB")
+    return out
+
+
+def selection_fill(
+    im: Image.Image,
+    x: int,
+    y: int,
+    width: int,
+    height: int,
+    color: str = "#000000",
+    transparent: bool = False,
+) -> Image.Image:
+    """Fill a rectangular region with a solid color."""
+    out = ensure_rgba(im) if transparent else im.copy()
+    draw = ImageDraw.Draw(out)
+    box = (
+        int(x),
+        int(y),
+        int(x) + max(1, int(width)),
+        int(y) + max(1, int(height)),
+    )
+    if transparent:
+        draw.rectangle(box, fill=(0, 0, 0, 0))
+    else:
+        draw.rectangle(box, fill=color)
+    return out
+
+
+def selection_stroke(
+    im: Image.Image,
+    x: int,
+    y: int,
+    width: int,
+    height: int,
+    color: str = "#000000",
+    line_width: int = 2,
+) -> Image.Image:
+    """Draw a rectangular outline (stroke)."""
+    out = im.copy()
+    draw = ImageDraw.Draw(out)
+    box = (
+        int(x),
+        int(y),
+        int(x) + max(1, int(width)),
+        int(y) + max(1, int(height)),
+    )
+    draw.rectangle(box, outline=color, width=max(1, int(line_width)))
+    return out
 
 
 def apply_pipeline(im: Image.Image, steps: list[dict[str, Any]]) -> tuple[Image.Image, list[str]]:
