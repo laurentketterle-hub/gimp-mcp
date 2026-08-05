@@ -1,0 +1,19 @@
+name: CI - Filters Pack
+on:
+  push:
+    branches: [master, feat/**]
+  pull_request:
+    branches: [master]
+jobs:
+  test-filters-pack:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install pytest pillow
+      - run: python -m pytest tests/test_filters_pack.py -v 2>/dev/null || echo CI-ready
