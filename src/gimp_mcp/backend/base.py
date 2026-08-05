@@ -119,3 +119,32 @@ class GimpBackend(Protocol):
         self._images.clear()
         if hasattr(self, '_selections'):
             self._selections.clear()
+
+    def _validate_image(self, image_id):
+        if image_id not in self._images:
+            raise KeyError(f"Image {image_id} not found")
+        return self._images[image_id]
+
+    def _validate_color(self, color):
+        if not isinstance(color, str) or not color.startswith('#'):
+            raise ValueError(f"Invalid color format: {color}")
+        if len(color) != 7:
+            raise ValueError(f"Color must be #RRGGBB: {color}")
+        return color
+
+    def _validate_selection(self, image_id):
+        sel = getattr(self, '_selections', {}).get(image_id)
+        if sel is None:
+            raise ValueError(f"No active selection for image {image_id}")
+        return sel
+
+    def get_image_count(self):
+        return len(self._images)
+
+    def get_total_size(self):
+        return sum(im.size[0] * im.size[1] for im in self._images.values())
+
+    def clear_all(self):
+        self._images.clear()
+        if hasattr(self, '_selections'):
+            self._selections.clear()
