@@ -240,7 +240,7 @@ class LiveBackend:
                 "returncode": proc.returncode,
                 "log_tail": out[-2000:],
             }
-﻿        except subprocess.TimeoutExpired:
+        except subprocess.TimeoutExpired:
             # Kill hung gimp-console process
             import psutil
             for proc in psutil.process_iter(["pid", "name"]):
@@ -684,6 +684,31 @@ class LiveBackend:
             "height": height,
             "gimp_console": discover_gimp_console(),
         }
+
+
+    def selection_rect(
+        self, image_id: str, x: int, y: int, width: int, height: int, feather: float = 0.0
+    ) -> dict[str, Any]:
+        """Create rectangular selection (mock-mode assist)."""
+        return self._pillow_op(
+            image_id, "selection_rect", x=x, y=y, width=width, height=height, feather=feather
+        )
+
+    def fill_selection(
+        self, image_id: str, color: str = "#000000", opacity: float = 1.0, blend: str = "normal"
+    ) -> dict[str, Any]:
+        """Fill current selection (mock-mode assist)."""
+        return self._pillow_op(
+            image_id, "fill_selection", color=color, opacity=opacity, blend=blend
+        )
+
+    def stroke_selection(
+        self, image_id: str, color: str = "#000000", line_width: int = 2, style: str = "solid"
+    ) -> dict[str, Any]:
+        """Stroke current selection (mock-mode assist)."""
+        return self._pillow_op(
+            image_id, "stroke_selection", color=color, line_width=line_width, style=style
+        )
 
     def list_layers(self, image_id: str) -> dict[str, Any]:
         """List layers in the image (live mode)."""

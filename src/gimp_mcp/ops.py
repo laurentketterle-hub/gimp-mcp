@@ -452,3 +452,112 @@ def apply_pipeline(im: Image.Image, steps: list[dict[str, Any]]) -> tuple[Image.
         cur = PIPELINE_OPS[op](cur, **params)
         applied.append(op)
     return cur, applied
+
+# ── Selection ops ────────────────────────────────────────────────────
+
+def selection_rect(
+    im: Image.Image,
+    x: int,
+    y: int,
+    width: int,
+    height: int,
+    feather: float = 0.0,
+) -> Image.Image:
+    """Return image unchanged; selection state stored by backend.
+    The backend records (x, y, width, height, feather) so subsequent
+    fill_selection / stroke_selection can act on this region."""
+    return im.copy()
+
+
+def fill_selection(
+    im: Image.Image,
+    sel_x: int,
+    sel_y: int,
+    sel_width: int,
+    sel_height: int,
+    color: str = "#000000",
+    opacity: float = 1.0,
+    blend: str = "normal",
+) -> Image.Image:
+    """Fill the selected rectangle with *color* at the given *opacity*."""
+    out = ensure_rgba(im)
+    overlay = Image.new("RGBA", out.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(overlay)
+    x0, y0 = int(sel_x), int(sel_y)
+    x1, y1 = x0 + max(1, int(sel_width)), y0 + max(1, int(sel_height))
+    # Parse colour and set alpha from opacity
+    try:
+        c = _parse_color(color)
+    except ValueError:
+        c = (0, 0, 0)
+    alpha = int(max(0.0, min(1.0, float(opacity))) * 255)
+    draw.rectangle((x0, y0, x1, y1), fill=c + (alpha,))
+    out = Image.alpha_composite(out, overlay)
+    return out
+
+
+def stroke_selection(
+    im: Image.Image,
+    sel_x: int,
+    sel_y: int,
+    sel_width: int,
+    sel_height: int,
+    color: str = "#000000",
+    line_width: int = 2,
+    style: str = "solid",
+) -> Image.Image:
+    """Draw a border (stroke) around the selected rectangle."""
+    out = ensure_rgba(im) if im.mode != "RGBA" else im.copy()
+    draw = ImageDraw.Draw(out)
+    x0, y0 = int(sel_x), int(sel_y)
+    x1, y1 = x0 + max(1, int(sel_width)), y0 + max(1, int(sel_height))
+    w = max(1, int(line_width))
+    try:
+        c = _parse_color(color)
+    except ValueError:
+        c = (0, 0, 0)
+    draw.rectangle((x0, y0, x1 - 1, y1 - 1), outline=c, width=w)
+    return out
+
+
+def _parse_color(s: str) -> tuple[int, int, int]:
+    """Parse '#rrggbb' or '#rgb' to (r,g,b)."""
+    s = s.strip()
+    if s.startswith("#"):
+        s = s[1:]
+    if len(s) == 3:
+        s = "".join(c * 2 for c in s)
+    if len(s) != 6:
+        raise ValueError(f"bad color: {s!r}")
+    return (int(s[0:2], 16), int(s[2:4], 16), int(s[4:6], 16))
+
+
+# Add selection ops to pipeline
+PIPELINE_OPS["selection_rect"] = lambda im, **kw: selection_rect(
+    im,
+    int(kw.get("x", 0)),
+    int(kw.get("y", 0)),
+    int(kw.get("width", 100)),
+    int(kw.get("height", 100)),
+    float(kw.get("feather", 0.0)),
+)
+PIPELINE_OPS["fill_selection"] = lambda im, **kw: fill_selection(
+    im,
+    int(kw.get("sel_x", 0)),
+    int(kw.get("sel_y", 0)),
+    int(kw.get("sel_width", 100)),
+    int(kw.get("sel_height", 100)),
+    str(kw.get("color", "#000000")),
+    float(kw.get("opacity", 1.0)),
+    str(kw.get("blend", "normal")),
+)
+PIPELINE_OPS["stroke_selection"] = lambda im, **kw: stroke_selection(
+    im,
+    int(kw.get("sel_x", 0)),
+    int(kw.get("sel_y", 0)),
+    int(kw.get("sel_width", 100)),
+    int(kw.get("sel_height", 100)),
+    str(kw.get("color", "#000000")),
+    int(kw.get("line_width", 2)),
+    str(kw.get("style", "solid")),
+)

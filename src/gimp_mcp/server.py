@@ -260,7 +260,7 @@ def gimp_pipeline(image_id: str, steps_json: str) -> str:
     Apply a multi-step recipe. steps_json is a JSON array of objects with 'op' plus params.
     Ops include: auto_orient, resize, thumbnail, crop, crop_bottom, crop_percent, flip,
     rotate, blur, sharpen, desaturate, invert, brightness, contrast, saturation, text,
-    erase_rect, fill_rect, remove_background, trim, pad, border, opacity.
+    erase_rect, fill_rect, selection_rect, fill_selection, stroke_selection, remove_background, trim, pad, border, opacity.
     """
     steps = json.loads(steps_json)
     if not isinstance(steps, list):
@@ -299,7 +299,43 @@ def gimp_flatten(image_id: str) -> str:
 
 
 
-﻿@mcp.tool()
+
+@mcp.tool()
+def gimp_selection_rect(
+    image_id: str,
+    x: int,
+    y: int,
+    width: int,
+    height: int,
+    feather: float = 0.0,
+) -> str:
+    """Create rectangular selection (think: GIMP Rectangle Select tool)."""
+    return _j(get_backend().selection_rect(image_id, x, y, width, height, feather))
+
+
+@mcp.tool()
+def gimp_fill_selection(
+    image_id: str,
+    color: str = "#000000",
+    opacity: float = 1.0,
+    blend: str = "normal",
+) -> str:
+    """Fill active selection with a color (think: Edit → Fill with FG Color)."""
+    return _j(get_backend().fill_selection(image_id, color, opacity, blend))
+
+
+@mcp.tool()
+def gimp_stroke_selection(
+    image_id: str,
+    color: str = "#000000",
+    line_width: int = 2,
+    style: str = "solid",
+) -> str:
+    """Stroke (outline) the active selection (think: Edit → Stroke Selection)."""
+    return _j(get_backend().stroke_selection(image_id, color, line_width, style))
+
+
+@mcp.tool()
 def gimp_histogram(image_id: str) -> str:
     """Get image histogram data (RGB channel distribution)."""
     return _j(get_backend().histogram(image_id))

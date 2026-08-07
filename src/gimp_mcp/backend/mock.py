@@ -54,6 +54,7 @@ class MockBackend:
 
     def __init__(self) -> None:
         self._images: dict[str, dict[str, Any]] = {}
+        self._selections: dict[str, dict[str, Any]] = {}
         self._ws = workspace_dir() / "mock"
         self._ws.mkdir(parents=True, exist_ok=True)
 
@@ -382,7 +383,86 @@ class MockBackend:
         except KeyError as e:
             return {"ok": False, "error": str(e)}
 
-﻿    def histogram(self, image_id: str) -> dict[str, Any]:
+
+    # ── Selection operations ──────────────────────────────────────
+
+    def selection_rect(
+        self,
+        image_id: str,
+        x: int,
+        y: int,
+        width: int,
+        height: int,
+        feather: float = 0.0,
+    ) -> dict[str, Any]:
+        """Create a rectangular selection on the image."""
+        try:
+            _ = self._get(image_id)
+            sel = {
+                "x": int(x),
+                "y": int(y),
+                "width": max(1, int(width)),
+                "height": max(1, int(height)),
+                "feather": float(feather),
+            }
+            self._selections[image_id] = sel
+            return {"ok": True, "image_id": image_id, "selection": sel}
+        except KeyError as e:
+            return {"ok": False, "error": str(e)}
+
+    def fill_selection(
+        self,
+        image_id: str,
+        color: str = "#000000",
+        opacity: float = 1.0,
+        blend: str = "normal",
+    ) -> dict[str, Any]:
+        """Fill the current selection with a color."""
+        try:
+            sel = self._selections.get(image_id)
+            if sel is None:
+                return {"ok": False, "error": "no active selection; use selection_rect first"}
+            return self._apply(
+                image_id,
+                ops.fill_selection,
+                sel_x=sel["x"],
+                sel_y=sel["y"],
+                sel_width=sel["width"],
+                sel_height=sel["height"],
+                color=color,
+                opacity=opacity,
+                blend=blend,
+            )
+        except KeyError as e:
+            return {"ok": False, "error": str(e)}
+
+    def stroke_selection(
+        self,
+        image_id: str,
+        color: str = "#000000",
+        line_width: int = 2,
+        style: str = "solid",
+    ) -> dict[str, Any]:
+        """Stroke (outline) the current selection."""
+        try:
+            sel = self._selections.get(image_id)
+            if sel is None:
+                return {"ok": False, "error": "no active selection; use selection_rect first"}
+            return self._apply(
+                image_id,
+                ops.stroke_selection,
+                sel_x=sel["x"],
+                sel_y=sel["y"],
+                sel_width=sel["width"],
+                sel_height=sel["height"],
+                color=color,
+                line_width=line_width,
+                style=style,
+            )
+        except KeyError as e:
+            return {"ok": False, "error": str(e)}
+
+    def histogram(self, image_id: str) -> dict[str, Any]:
         """Calculate RGB histogram data (mock)."""
         try:
             im = self._load(image_id)
