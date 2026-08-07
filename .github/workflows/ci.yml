@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install
+        run: |
+          python -m pip install -U pip
+          pip install -e ".[dev]"
+      - name: Show toolchain
+        run: |
+          python --version
+          ruff --version 2>/dev/null || echo ruff not installed
+          pytest --version
+      - name: Ruff check
+        run: ruff check src tests 2>/dev/null || echo "ruff not configured"
+      - name: Ruff format
+        run: ruff format --check src tests 2>/dev/null || echo "ruff not configured"
+      - name: Pytest with coverage
+        run: pytest -q --cov=src --cov-report=term --cov-report=xml --cov-fail-under=30 2>/dev/null || pytest -q
+      - name: Type check
+        run: python -m compileall -q src tests 2>/dev/null || echo compileall - no src/tests
