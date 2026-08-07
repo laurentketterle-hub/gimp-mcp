@@ -512,8 +512,8 @@ def call_cmd(
             )
         elif tool_name == "gimp_flatten":
             dispatch[tool_name] = lambda: b.flatten(str(kv.get("image_id", "")))
-    
-﻿        elif tool_name == "gimp_mode":
+
+        elif tool_name == "gimp_mode":
             dispatch[tool_name] = lambda: b.doctor() if not kv.get("mode") else switch_mode(str(kv.get("mode", "")))
         elif tool_name == "gimp_batch_resize":
             dispatch[tool_name] = lambda: b.batch_resize(

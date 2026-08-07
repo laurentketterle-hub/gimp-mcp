@@ -1,7 +1,7 @@
 """Tests for selection rectangular + fill/stroke feature."""
 
 from gimp_mcp.config import set_mode
-from gimp_mcp.backend import get_backend, mock_instance
+from gimp_mcp.backend import get_backend
 
 
 def setup_function():
@@ -74,7 +74,6 @@ def test_selection_stroke():
     # Verify the border was drawn
     im = b._load(iid)
     # Border pixel (top-left of selection area, should be green)
-    px = im.getpixel((51, 51))
     # May be green or white depending on stroke width positioning
     # At minimum, some pixels should be green near border
     border_px = im.getpixel((50, 50))
