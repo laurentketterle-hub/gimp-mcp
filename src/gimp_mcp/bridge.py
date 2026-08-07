@@ -96,16 +96,16 @@ class BridgeProtocol:
         self._running = True
         self._server_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self._server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        
+
         # Remove existing socket file
         sock_path = Path(self.socket_path)
         if sock_path.exists():
             sock_path.unlink()
-        
+
         self._server_socket.bind(self.socket_path)
         self._server_socket.listen(5)
         self._server_socket.settimeout(1.0)
-        
+
         threading.Thread(target=self._accept_loop, daemon=True).start()
 
     def start_tcp(self) -> None:
@@ -116,7 +116,7 @@ class BridgeProtocol:
         self._server_socket.bind((self.tcp_host, self.tcp_port))
         self._server_socket.listen(5)
         self._server_socket.settimeout(1.0)
-        
+
         threading.Thread(target=self._accept_loop, daemon=True).start()
 
     def stop(self) -> None:
@@ -149,7 +149,7 @@ class BridgeProtocol:
                 data = client_socket.recv(MAX_MESSAGE_SIZE)
                 if not data:
                     break
-                
+
                 try:
                     msg = BridgeMessage.from_json(data.decode("utf-8"))
                     response = self._process_message(msg)
@@ -223,18 +223,18 @@ class BridgeClient:
         """Send a command and wait for response."""
         if not self._socket:
             raise ConnectionError("Not connected to bridge")
-        
+
         msg = BridgeMessage(msg_type=msg_type, payload=payload)
-        
+
         with self._lock:
             self._socket.sendall(msg.to_json().encode("utf-8"))
-            
+
             # Wait for response
             self._socket.settimeout(timeout)
             data = self._socket.recv(MAX_MESSAGE_SIZE)
             if not data:
                 raise ConnectionError("Connection closed")
-            
+
             response = BridgeMessage.from_json(data.decode("utf-8"))
             return response.payload
 
@@ -253,16 +253,17 @@ MSG_ERROR = "error"
 
 def create_default_handlers() -> dict[str, Callable[[BridgeMessage], dict[str, Any]]]:
     """Create default message handlers."""
+
     def handle_ping(msg: BridgeMessage) -> dict[str, Any]:
         return {"pong": True, "version": PROTOCOL_VERSION}
-    
+
     def handle_status(msg: BridgeMessage) -> dict[str, Any]:
         return {
             "status": "running",
             "version": PROTOCOL_VERSION,
             "uptime": time.time(),
         }
-    
+
     return {
         MSG_PING: handle_ping,
         MSG_STATUS: handle_status,

@@ -44,7 +44,7 @@ def test_selection_fill():
 
     # Create selection first
     b.selection_rect(iid, 50, 50, 100, 100)
-    
+
     # Fill it red
     fill = b.selection_fill(iid, "#ff0000")
     assert fill["ok"]
@@ -65,7 +65,7 @@ def test_selection_stroke():
 
     # Create selection
     b.selection_rect(iid, 50, 50, 100, 100)
-    
+
     # Stroke it green with width 3
     stroke = b.selection_stroke(iid, width=3, color="#00ff00")
     assert stroke["ok"]
@@ -139,7 +139,7 @@ def test_selection_cleared_on_image_close():
 
     b.selection_rect(iid, 10, 10, 50, 50)
     b.close_image(iid)
-    
+
     # Re-create image with same workflow — selection should not persist
     r2 = b.new_image(200, 200, "#ffffff")
     iid2 = r2["image"]["id"]
@@ -156,7 +156,7 @@ def test_selection_fill_and_stroke_combined():
     b.selection_rect(iid, 50, 50, 100, 100)
     b.selection_fill(iid, "#ff0000")
     b.selection_stroke(iid, width=2, color="#000000")
-    
+
     im = b._load(iid)
     # Center of selection should be red (fill)
     center = im.getpixel((100, 100))

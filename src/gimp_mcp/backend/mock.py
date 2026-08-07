@@ -70,7 +70,9 @@ class MockBackend:
             raise KeyError(f"unknown image_id={image_id}")
         return self._images[image_id]
 
-    def _save_meta(self, image_id: str, im: Image.Image, path: Path | None = None) -> dict[str, Any]:
+    def _save_meta(
+        self, image_id: str, im: Image.Image, path: Path | None = None
+    ) -> dict[str, Any]:
         meta = self._images.get(image_id) or {"id": image_id}
         if path is None:
             ext = ".png" if im.mode == "RGBA" else ".png"
@@ -167,7 +169,9 @@ class MockBackend:
     def resize(self, image_id: str, width: int, height: int) -> dict[str, Any]:
         return self._apply(image_id, ops.resize, width=width, height=height)
 
-    def thumbnail(self, image_id: str, max_width: int = 512, max_height: int = 512) -> dict[str, Any]:
+    def thumbnail(
+        self, image_id: str, max_width: int = 512, max_height: int = 512
+    ) -> dict[str, Any]:
         return self._apply(image_id, ops.thumbnail, max_width=max_width, max_height=max_height)
 
     def crop(self, image_id: str, x: int, y: int, width: int, height: int) -> dict[str, Any]:
@@ -227,9 +231,7 @@ class MockBackend:
         size: int = 32,
         color: str = "#000000",
     ) -> dict[str, Any]:
-        r = self._apply(
-            image_id, ops.text_overlay, text=text, x=x, y=y, size=size, color=color
-        )
+        r = self._apply(image_id, ops.text_overlay, text=text, x=x, y=y, size=size, color=color)
         if r.get("ok"):
             r["text"] = text
             r["size"] = size
@@ -301,20 +303,25 @@ class MockBackend:
         color: str = "#000000",
         transparent: bool = False,
     ) -> dict[str, Any]:
-        return self._apply(
-            image_id, ops.pad, padding=padding, color=color, transparent=transparent
-        )
+        return self._apply(image_id, ops.pad, padding=padding, color=color, transparent=transparent)
 
     def border(self, image_id: str, width: int = 4, color: str = "#ffffff") -> dict[str, Any]:
         return self._apply(image_id, ops.border, width=width, color=color)
-
 
     def _get_selection(self, image_id: str) -> dict[str, Any] | None:
         """Get current selection for image, or None."""
         return self._selections.get(image_id)
 
-    def selection_rect(self, image_id: str, x: int, y: int, width: int, height: int,
-                       feather: bool = False, feather_radius: float = 5.0) -> dict[str, Any]:
+    def selection_rect(
+        self,
+        image_id: str,
+        x: int,
+        y: int,
+        width: int,
+        height: int,
+        feather: bool = False,
+        feather_radius: float = 5.0,
+    ) -> dict[str, Any]:
         """Create a rectangular selection on the image."""
         try:
             _ = self._get(image_id)  # validate image exists
@@ -356,7 +363,9 @@ class MockBackend:
             color=color,
         )
 
-    def selection_stroke(self, image_id: str, width: int = 2, color: str = "#000000") -> dict[str, Any]:
+    def selection_stroke(
+        self, image_id: str, width: int = 2, color: str = "#000000"
+    ) -> dict[str, Any]:
         """Stroke (draw border) around the current selection."""
         sel = self._get_selection(image_id)
         if sel is None:
@@ -463,12 +472,17 @@ class MockBackend:
         try:
             im = self._load(image_id)
             from collections import Counter
+
             pixels = list(im.getdata())
             r = dict(Counter(p[0] for p in pixels))
             g = dict(Counter(p[1] for p in pixels))
             b = dict(Counter(p[2] for p in pixels))
-            return {"ok": True, "width": im.width, "height": im.height,
-                    "channels": {"red": r, "green": g, "blue": b}}
+            return {
+                "ok": True,
+                "width": im.width,
+                "height": im.height,
+                "channels": {"red": r, "green": g, "blue": b},
+            }
         except KeyError as e:
             return {"ok": False, "error": str(e)}
 
@@ -480,8 +494,10 @@ class MockBackend:
                 ex = im._getexif() or {}
             except Exception:
                 ex = {}
-            return {"ok": True, "image_id": image_id,
-                    "exif": {str(k): str(v) for k, v in ex.items()}}
+            return {
+                "ok": True,
+                "image_id": image_id,
+                "exif": {str(k): str(v) for k, v in ex.items()},
+            }
         except KeyError as e:
             return {"ok": False, "error": str(e)}
-

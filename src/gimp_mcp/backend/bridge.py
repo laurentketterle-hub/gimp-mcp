@@ -98,9 +98,7 @@ class BridgeBackend:
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
-    def exec_batch(
-        self, operations: list[dict[str, Any]], timeout: float = 60.0
-    ) -> dict[str, Any]:
+    def exec_batch(self, operations: list[dict[str, Any]], timeout: float = 60.0) -> dict[str, Any]:
         """Execute multiple operations in a batch."""
         if not self._connected:
             return {"ok": False, "error": "Not connected to bridge"}

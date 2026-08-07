@@ -53,7 +53,7 @@ def matte_from_gold(
     """Prefer warm gold pixels over gray haze."""
     r, g, b = rgb[:, :, 0], rgb[:, :, 1], rgb[:, :, 2]
     presence = np.maximum(np.maximum(r, g), b)
-    gold = (r * 0.55 + g * 0.45 - b * 0.35)
+    gold = r * 0.55 + g * 0.45 - b * 0.35
     score = np.maximum(presence * 0.65 + gold * 0.55, 0)
     return np.clip((score - thr) / max(soft, 1e-3), 0.0, 1.0) * 255.0
 
@@ -108,15 +108,11 @@ def defringe(
     if not np.any(core):
         core = solid
     mean_rgb = rgb[core].mean(axis=0)
-    core_luma = float(
-        0.299 * mean_rgb[0] + 0.587 * mean_rgb[1] + 0.114 * mean_rgb[2]
-    )
+    core_luma = float(0.299 * mean_rgb[0] + 0.587 * mean_rgb[1] + 0.114 * mean_rgb[2])
     out = rgb.copy()
     alpha_out = alpha.copy()
     if np.any(edge):
-        edge_luma = (
-            0.299 * out[edge, 0] + 0.587 * out[edge, 1] + 0.114 * out[edge, 2]
-        )
+        edge_luma = 0.299 * out[edge, 0] + 0.587 * out[edge, 1] + 0.114 * out[edge, 2]
         # drop dark bloom rim entirely; recolor mid/bright edge to core gold
         dark = edge_luma < core_luma * 0.72
         edge_idx = np.where(edge)
@@ -137,6 +133,8 @@ def defringe(
     # store on function for cutout_layers to pick up
     defringe.last_alpha = alpha_out  # type: ignore[attr-defined]
     return out
+
+
 def antialias_matte(alpha: np.ndarray, radius: float = 0.8) -> np.ndarray:
     """Very slight blur on hard matte for 1px AA only."""
     if radius <= 0:
@@ -217,6 +215,7 @@ def cutout_layers(
         "mode": mode,
         "hard": hard,
     }
+
 
 def export_layer_debug(result: dict[str, Any], prefix: Path) -> dict[str, str]:
     """Write color/matte/rgba layers for inspection."""

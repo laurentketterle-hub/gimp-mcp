@@ -136,7 +136,9 @@ def live_smoke_cmd(
 
 @app.command("logo")
 def logo_cmd(
-    font: str = typer.Option("HelvetIns", "--font", "-f", help="UTM alias: HelvetIns, AvoBold, TimesBold, SwissBold…"),
+    font: str = typer.Option(
+        "HelvetIns", "--font", "-f", help="UTM alias: HelvetIns, AvoBold, TimesBold, SwissBold…"
+    ),
     style: str = typer.Option("flat", "--style", "-s", help="flat | gradient | twist-depth"),
     styles: str = typer.Option("", "--styles", help="Comma list, e.g. flat,gradient"),
     src: str = typer.Option(
@@ -256,7 +258,15 @@ def process_cmd(
         },
     ]
     pipe = b.pipeline(iid, steps)
-    rprint({"pipeline": {"ok": pipe.get("ok"), "applied": pipe.get("applied"), "image": pipe.get("image")}})
+    rprint(
+        {
+            "pipeline": {
+                "ok": pipe.get("ok"),
+                "applied": pipe.get("applied"),
+                "image": pipe.get("image"),
+            }
+        }
+    )
     if not pipe.get("ok"):
         raise typer.Exit(1)
 
@@ -358,7 +368,9 @@ def call_cmd(
             dispatch[tool_name] = lambda: b.close_image(str(kv.get("image_id", "")))
         elif tool_name == "gimp_new_image":
             dispatch[tool_name] = lambda: b.new_image(
-                int(kv.get("width", 800)), int(kv.get("height", 600)), str(kv.get("color", "#ffffff"))
+                int(kv.get("width", 800)),
+                int(kv.get("height", 600)),
+                str(kv.get("color", "#ffffff")),
             )
         elif tool_name == "gimp_open":
             dispatch[tool_name] = lambda: b.open_image(str(kv.get("path", "")))
@@ -391,7 +403,9 @@ def call_cmd(
                 str(kv.get("image_id", "")), float(kv.get("degrees", 90))
             )
         elif tool_name == "gimp_blur":
-            dispatch[tool_name] = lambda: b.blur(str(kv.get("image_id", "")), float(kv.get("radius", 2.0)))
+            dispatch[tool_name] = lambda: b.blur(
+                str(kv.get("image_id", "")), float(kv.get("radius", 2.0))
+            )
         elif tool_name == "gimp_sharpen":
             dispatch[tool_name] = lambda: b.sharpen(
                 str(kv.get("image_id", "")),
@@ -507,14 +521,15 @@ def call_cmd(
             dispatch[tool_name] = lambda: b.list_layers(str(kv.get("image_id", "")))
         elif tool_name == "gimp_new_layer":
             dispatch[tool_name] = lambda: b.new_layer(
-                str(kv.get("image_id", "")),
-                str(kv.get("name", "New Layer"))
+                str(kv.get("image_id", "")), str(kv.get("name", "New Layer"))
             )
         elif tool_name == "gimp_flatten":
             dispatch[tool_name] = lambda: b.flatten(str(kv.get("image_id", "")))
 
         elif tool_name == "gimp_mode":
-            dispatch[tool_name] = lambda: b.doctor() if not kv.get("mode") else switch_mode(str(kv.get("mode", "")))
+            dispatch[tool_name] = lambda: (
+                b.doctor() if not kv.get("mode") else switch_mode(str(kv.get("mode", "")))
+            )
         elif tool_name == "gimp_batch_resize":
             dispatch[tool_name] = lambda: b.batch_resize(
                 str(kv.get("input_dir", "")),
@@ -540,6 +555,7 @@ def call_cmd(
 def layers_cmd(image_id: str = typer.Argument(..., help="Image ID to list layers")) -> None:
     """List layers in the specified image."""
     from gimp_mcp.backend import get_backend
+
     b = get_backend()
     result = b.list_layers(image_id)
     rprint(result)
@@ -548,10 +564,11 @@ def layers_cmd(image_id: str = typer.Argument(..., help="Image ID to list layers
 @app.command("new-layer")
 def new_layer_cmd(
     image_id: str = typer.Argument(..., help="Image ID to add layer to"),
-    name: str = typer.Option("New Layer", help="Name of the new layer")
+    name: str = typer.Option("New Layer", help="Name of the new layer"),
 ) -> None:
     """Create a new layer in the specified image."""
     from gimp_mcp.backend import get_backend
+
     b = get_backend()
     result = b.new_layer(image_id, name)
     rprint(result)
@@ -561,6 +578,7 @@ def new_layer_cmd(
 def flatten_cmd(image_id: str = typer.Argument(..., help="Image ID to flatten")) -> None:
     """Flatten all layers in the specified image."""
     from gimp_mcp.backend import get_backend
+
     b = get_backend()
     result = b.flatten(image_id)
     rprint(result)
