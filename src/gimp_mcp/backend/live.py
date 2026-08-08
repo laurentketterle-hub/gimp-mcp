@@ -495,6 +495,10 @@ class LiveBackend:
     def contrast(self, image_id: str, factor: float = 1.2) -> dict[str, Any]:
         return self._pillow_op(image_id, "contrast", factor=factor)
 
+
+def emboss(self, image_id: str) -> dict[str, Any]:
+        """Emboss filter via Pillow."""
+        return self._pillow_op(image_id, "emboss")
     def saturation(self, image_id: str, factor: float = 1.2) -> dict[str, Any]:
         return self._pillow_op(image_id, "saturation", factor=factor)
 
