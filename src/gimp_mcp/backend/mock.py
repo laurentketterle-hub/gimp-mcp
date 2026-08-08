@@ -206,6 +206,10 @@ class MockBackend:
     def contrast(self, image_id: str, factor: float = 1.2) -> dict[str, Any]:
         return self._apply(image_id, ops.contrast, factor=factor)
 
+
+def emboss(self, image_id: str) -> dict[str, Any]:
+        """Emboss filter."""
+        return self._apply(image_id, ops.emboss)
     def saturation(self, image_id: str, factor: float = 1.2) -> dict[str, Any]:
         return self._apply(image_id, ops.saturation, factor=factor)
 
