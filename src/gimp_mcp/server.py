@@ -143,6 +143,11 @@ def gimp_contrast(image_id: str, factor: float = 1.2) -> str:
     return _j(get_backend().contrast(image_id, factor))
 
 
+
+@mcp.tool()
+def gimp_emboss(image_id: str) -> str:
+    """Emboss effect filter."""
+    return _j(get_backend().emboss(image_id))
 @mcp.tool()
 def gimp_saturation(image_id: str, factor: float = 1.2) -> str:
     """Adjust color saturation (1.0 = unchanged)."""
