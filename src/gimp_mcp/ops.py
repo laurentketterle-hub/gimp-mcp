@@ -143,6 +143,16 @@ def contrast(im: Image.Image, factor: float = 1.2) -> Image.Image:
     return ImageEnhance.Contrast(im.convert("RGB")).enhance(float(factor))
 
 
+
+def emboss(im: Image.Image) -> Image.Image:
+    """Emboss filter using convolution kernel."""
+    import numpy as np
+    kernel = np.array([[-2, -1, 0],
+                       [-1,  1, 1],
+                       [ 0,  1, 2]], dtype=np.float32)
+    arr = np.array(im.convert("RGB"), dtype=np.float32)
+    from PIL import ImageFilter
+    return im.filter(ImageFilter.EMBOSS)
 def saturation(im: Image.Image, factor: float = 1.2) -> Image.Image:
     if im.mode == "RGBA":
         a = im.split()[-1]
